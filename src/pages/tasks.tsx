@@ -1,5 +1,8 @@
 import React, { ChangeEvent, useEffect, useRef } from "react";
 import { useTaskManager } from "@/store/useTaskManager";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import dynamic from "next/dynamic";
+import { TASK_KEY } from "@/utils/constants";
 
 export interface Task {
   id: number;
@@ -9,14 +12,14 @@ export interface Task {
 
 const TaskManager = () => {
   const createTaskRef = useRef<HTMLInputElement>(null);
-  const tasks = useTaskManager((x) => x.tasks);
-  const { setSearchTask, searchTask, addTask, updateTask, deleteTask } =
+  const { save } = useLocalStorage();
+  const { tasks, setSearchTask, searchTask, addTask, updateTask, deleteTask } =
     useTaskManager();
 
   useEffect(() => {
     // listener for changes made into tasks
     const unsubscribe = useTaskManager.subscribe((state) => {
-      console.log("new change", state.tasks.length);
+      save(TASK_KEY, JSON.stringify(state.tasks));
     });
 
     return () => {
@@ -79,4 +82,6 @@ const TaskManager = () => {
   );
 };
 
-export default TaskManager;
+export default dynamic(() => Promise.resolve(TaskManager), {
+  ssr: false,
+});
